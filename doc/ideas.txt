@@ -1,0 +1,7 @@
+Kaleidoscope Heart.
+
+Player character is a Magical Girl who projects a Kaleidoscope. The kaleidoscope can be calibrated with size, speed, and movement patterns, maybe sub-patterns too. If I have time, anyway.
+
+For instance, stars do damage, clovers reveal hidden enemies, hearts get rid of bullets. Colours may be better.
+
+Other kaleidoscope effects, like particles, trails, and so on.
