@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <title>Shader Learning Stuff</title>
+        <script language="javascript" src="../engine/shaders.js"></script>
+        <script language="javascript">
+            function canvasLoaded()
+            {
+               var canvas = document.getElementById("test");
+                var gl = canvas.getContext("experimental-webgl2") || 
+                            canvas.getContext("webgl") ||
+                            canvas.getContext("experimental-webgl") ||
+                            canvas.getContext("moz-webgl") ||
+                            canvas.getContext("webkit-3d") ;
+                if (!gl)
+                {
+                    console.log("Could not get OpenGL context")
+                    return;
+                }
+
+                var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+                gl.shaderSource(vertexShader, shaders.vertex);
+                gl.compileShader(vertexShader);
+                console.log( gl.getShaderInfoLog(vertexShader));
+                
+                
+                var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+                gl.shaderSource(fragmentShader, shaders.fragment);
+                gl.compileShader(fragmentShader);
+                console.log( gl.getShaderInfoLog(fragmentShader));
+                
+                var shaderProgram = gl.createProgram();
+                gl.attachShader(shaderProgram, vertexShader);
+                gl.attachShader(shaderProgram, fragmentShader);
+                gl.linkProgram(shaderProgram);
+            }
+        </script>
+    </head>
+        <body onload="canvasLoaded()">
+            <canvas id="test" width="640" height="480"></canvas>
+        </body>
+</html>
