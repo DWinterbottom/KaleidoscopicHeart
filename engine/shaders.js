@@ -141,3 +141,54 @@ void main(void)
     vColourise = aColourise;
 }`
 
+shaders.uniforms = ["aVertexPosition", "aTextureCoordinates", "aHue", "aColourise"]
+
+shaders.attributes = ["uLayerHeight", "uMVMatrix", "uTexture"]
+
+shaders.bufferToCanvasVertex = `
+attribute vec2 aVertexPosition;
+varying vTextureCoordinates;
+void main(void)
+{
+    gl_Position = vec4(aVertexPosition, 0.0, 0.0);
+    vTextureCoordinates = aVertexPosition;
+}
+`
+
+shaders.bufferToCanvasFragment = `
+
+varying vTextureCoordinates;
+uniform sampler2D uTexture;
+void main(void)
+{
+    gl_FragColor = texture2D(uTexture, vTextureCoordinates);
+}
+`
+
+shaders.bufferToCanvasUniforms = ["uTexture"]
+
+shaders.bufferToCanvasAttributes = ["aVertexPosition"]
+
+shaders.kaleidoscopeFanVertex = `
+attribute vec2 aVertexPosition;
+attribute vec3 aTextureCoordinates;
+varying vTextureCoordinates;
+void main(void)
+{
+    gl_Position = uMVMatrix * vec4(aVertexPosition, 0.0, 0.0);
+    vTextureCoordinates = aTextureCoordinates;
+}
+`
+
+shaders.kaleidoscopeFanFragment = `
+varying vTextureCoordinates;
+uniform sampler2D uTexture;
+void main(void)
+{
+    gl_FragColor = texture2D(uTexture, vTextureCoordinates);
+}
+`
+
+shaders.kaleidoscopeFanUniforms = ["uTexture"]
+
+shaders.kaleidoscopeFanAttributes = ["aVertexPosition", "aTextureCoordinates"]
