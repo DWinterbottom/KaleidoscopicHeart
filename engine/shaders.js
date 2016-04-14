@@ -151,7 +151,7 @@ varying vTextureCoordinates;
 void main(void)
 {
     gl_Position = vec4(aVertexPosition, 0.0, 0.0);
-    vTextureCoordinates = aVertexPosition;
+    vTextureCoordinates = vec2((aVertexPosition.x + 1)*0.5, (aVertexPosition.y + 1)*0.5);
 }
 `
 
