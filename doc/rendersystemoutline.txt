@@ -1,0 +1,68 @@
+Game: Global object that services register with.
+- Dict of Components, such as
+-- Scene Graph
+-- Object Prototypes
+-- Renderer
+-- Input Manager
+-- Environment Variables
+-- Game Flow
+:RegisterComponent(name, object, advancePhase)
+:GetComponent(name) Returns the registered component
+:UnregisterComponent?
+:Advance(deltaT) Calls NewFrame on, then Advance, everything registered
+
+Renderer: Renders 
+-Webgl context
+-BackBuffer
+-FrontBuffer
+:Advance(deltaT) Presents buffer, then swaps.
+:NewFrame()
+:DrawBuffer() Gets the current draw buffer.
+:Render(RenderObjects, Target)
+
+SceneGraphNode:
+-Transform
+-Children
+-SceneGraphObject
+:NewFrame()
+:Advance(deltaT) Advance all children
+:GetRenderObjects()
+:GetPhysicsObjects()
+
+SceneGraph(SceneGraphNode):
+-Children
+:NewFrame()
+:Advance(deltaT) Advance all children, get render objects, and render them.
+:GetPhysicsObjects() Get the physics geometry stuff from the child objects.
+
+LayerNode(SceneGraphNode):
+-FrontBuffer
+-BackBuffer
+-Layers
+-LayerOrder
+:NewFrame() Swap buffers
+:DrawBuffer()
+:Advance(deltaT) Advance all children.
+:GetRenderObjects() Get (or use cache of) child render objects, render them, and create new ones.
+:GetPhysicsObjects() Get (or use cache of) child physics objects and pass them straight through.
+
+RenderObjectPrototype:
+-Vertices
+-VertexData
+-RenderFunction(vertices, vertexdata)
+-Any other data needed by the RenderFunction
+
+GameObjectPrototype:
+-Behaviour
+-PhysicsData
+:Advance(deltaT)
+:CollisionBehaviour(other)
+:GetPhysicsObject()
+
+SceneGraphObject(RenderObjectPrototype, GameObjectPrototype):
+-Transform
+-Parent(s?) For requesting object spawning and similar.
+:GetRenderObject() Returns a renderable object, as the RenderObjectPrototype used, but transformed or otherwise adjusted.
+:GetPhysicsObject() Returns a physics object containing transformed vertices (or some other hitbox), collisionBehaviour, and physics data.
+
+GameObjectPrototypes and RenderObjectPrototypes will need to be constructed in advance. SceneGraphObjects will be instanced as needed.
