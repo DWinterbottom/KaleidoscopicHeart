@@ -16,14 +16,68 @@ function NewFrameObject()
     this.NewFrame;
 }
 
-function SceneGraphObjectPrototype(renderObjectPrototype, physicsObjectPrototype, behaviour){ 
-    this.transform = Mat4Identity();
-    this.children = [];
-    this.Advance = AdvanceObject;
-    this.NewFrame = NewFrameObject;
-    Object.extend(this, renderObjectPrototype);
-    Object.extend(this, physicsObjectPrototype);
-    Object.extend(this, behaviour);
+function MakeSceneGraphObjectPrototype(renderObjectPrototype, physicsObjectPrototype, behaviour)
+{ 
+    var proto = {
+        Advance:AdvanceObject,
+        NewFrame:NewFrameObject
+        AddReference:function(){
+            this.reference += 1;
+        },
+        AddChild:function(child){
+            this.children.push(child);
+            child.AddReference();
+        }
+        RemoveReference:function(){
+            this.reference -= 1;
+            if (this.reference < 1)
+            {
+                for (var child in this.children){
+                    child.RemoveReference();
+                }
+                this.OnDestroy();
+            }
+        }
+        RemoveChild:function(objectID, search){
+            var found = false;
+            for (var child in this.children)
+            {
+                if (child.objectID == objectID)
+                {
+                    child.RemoveReference();
+                    var index = this.children.indexOf(child);
+                    this.children.splice(index, 1);
+                    found = true;
+                }
+            }
+            if (!found and search)
+            {
+                for (var child in this.children)
+                {
+                    child.RemoveChild(objectID, search);
+                }
+            }
+        }
+    };
+    Object.assign(proto, renderObjectPrototype);
+    Object.assign(proto, physicsObjectPrototype);
+    Object.assign(proto, behaviour);
+    return proto;
+}
+
+var _sceneGraphObjectID = 0;
+function MakeSceneGraphObject(sceneGraphObjectPrototype)
+{
+    var sceneGraphObject = Object.create(
+    sceneGraphObjectPrototype,
+    {
+        references:0,
+        objectID:_sceneGraphObjectID,
+        transform:Mat4Identity(),
+        children:[]
+    }
+    )
+    _sceneGraphObjectID = 0;
 }
 
 function AddTransformationToObject(childObject)
@@ -55,11 +109,14 @@ function StandardGetRenderObjects()
 }
 
 function RenderObjectPrototype(GetRenderObjects, vertices, vertexData, RenderFunction, renderData) {
-    this.GetRenderObjects = GetRenderObjects;
-    this.vertices = vertices;
-    this.vertexData = vertexData;
-    this.RenderFunction = RenderFunction
-    this.renderData = renderData;
+    return 
+    {
+        GetRenderObjects:GetRenderObjects,
+        vertices:vertices,
+        vertexData:vertexData,
+        RenderFunction:RenderFunction,
+        renderData:renderData
+    }
 }
 
 function StandardGetCollisionObjects()
@@ -78,20 +135,26 @@ function StandardGetCollisionObjects()
             transform:this.transform,
             vertices:this.vertices,
             OnCollision:this.OnCollision,
-            collisionData:this.collisionData,
+            collisionData:this.collisionData
         }
         renderObjects.push()
     }
 }
 
 function CollisionObjectPrototype(GetCollisionObjects, collisionData) {
-    this.GetCollisionObject = GetCollisionObject;
-    this.collisionData = collisionData;
+    return
+    {
+        GetCollisionObject:GetCollisionObject,
+        collisionData:collisionData
+    }
 }
 
 function Behaviour(Init, OnAdvance, OnCollision, OnNewFrame) {
- this.Init = Init;
- this.OnAdvance = OnAdvance;
- this.OnCollision = OnCollision;
- this.OnNewFrame = OnNewFrame;
+    return
+    {
+        Init:Init,
+        OnAdvance:OnAdvance,
+        OnCollision:OnCollision,
+        OnNewFrame:OnNewFrame
+    }
 }
