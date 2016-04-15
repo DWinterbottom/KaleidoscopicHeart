@@ -50,7 +50,17 @@ lowp vec4 GetHSL(vec4 v4RGBA)
     
     float fTexHue = mod(fBaseHue / 6.0, 1.0);
     
-    float fHueDistance = mod((vHue - fTexHue)+0.5, 1.0) - 0.5;
+    float fHueDistance = vHue - fTexHue;
+    if (fHueDistance > 0.5)
+    {
+        fHueDistance = 1.0 - fHueDistance;
+    }
+    else if (fHueDistance < -0.5)
+    {
+        fHueDistance = fHueDistance + 1;
+    }
+    
+    fTexHue = fTexHue + (fHueDistance * vColourise);
     
     vec4 ret = vec4(fTexHue, fTexSaturation, fTexLightness, v4RGBA.w);
     return ret;
