@@ -1,6 +1,6 @@
 var game = {};
-var maxFrameTime = 70;
-var minFrameTime = 20;
+var maxFrameTime = 100;
+var targetFrameTime = 35;
 
 game.debug = true;
 
@@ -25,39 +25,45 @@ function Startup(gameName, canvasName)
     game.gameSpecific = window[gameName];
     
     game.Init();
-    game.GameLoop();
+    game.StartGameLoop();
 };
 
-game.GameLoop = function(){
-    var previousTime = window.performance.now() - maxFrameTime;
-    while(true)
+game.StartGameLoop = function(){
+    game.previousTime = window.performance.now() - maxFrameTime;
+    GameLoop();
+};
+
+function GameLoop()
+{
+    var thisTime = window.performance.now();
+    var deltaT = Math.min(thisTime - this.previousTime, maxFrameTime);
+    game.previousTime = thisTime;
+
+    game.gameSpecific.Advance(deltaT);
+    game.sceneGraph.Advance(deltaT);
+
+    var collisionObjects = game.sceneGraph.GetCollisionObjects();
+    game.collisionManager.HandleCollisions(collisionObjects);
+
+    var renderObjects = game.sceneGraph.GetRenderObjects();
+    game.renderer.RenderObjects(renderObjects, null);
+    
+    game.renderer.EndFrame();
+    
+    //Cleanup ready for new frame.
+    game.sceneGraph.NewFrame();
+    game.keyInput.NewFrame();
+    if (game.gameSpecific.NewFrame())//Return true to quit.
     {
-        var thisTime = window.performance.now();
-        var deltaT = Math.min(thisTime - previousTime, maxFrameTime);
-        if (deltaT < minFrameTime)
-        {
-            continue;
-        }
-        previousTime = thisTime;
-
-        this.gameSpecific.Advance(deltaT);
-        this.sceneGraph.Advance(deltaT);
-
-        var collisionObjects = this.sceneGraph.GetCollisionObjects();
-        this.collisionManager.HandleCollisions(collisionObjects);
-
-        var renderObjects = this.sceneGraph.GetRenderObjects();
-        this.renderer.RenderObjects(renderObjects, null);
-
-        this.sceneGraph.NewFrame();
-        this.keyInput.NewFrame();
-
-        if (!this.gameSpecific.NewFrame())
-        {
-            break;
-        }
+        //Any pre-quit code?
+    }
+    else
+    {
+      var timeTaken = window.performance.now() - game.previousTime;
+      setTimeout(GameLoop, Math.max(targetFrameTime - timeTaken, 0))
     }
 };
+
 
 game.Init = function(){
     game.gameSpecific.Init();

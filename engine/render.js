@@ -42,22 +42,57 @@ function GetOrCreateProgram(name, vertexSource, fragmentSource, attribNames, uni
     return [shaderProgram, locations];
 }
 
+function SetUpFrameBuffer(gl, height, width)
+{
+      var texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      
+      
+      var depth = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, depth);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+      
+      var buffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth);
+      
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      
+      return [texture, depth, buffer];
+    
+}
+
+function SetUpFrameBuffers(renderer, gl, height, width)
+{
+    renderer._textures = {};
+    renderer._depths = {};
+    renderer._buffers = {};
+    
+    for (var b in [true, false])
+    { 
+      var tdb = SetUpFrameBuffer(gl, height, width);
+      renderer._textures[b] = tdb[0];
+      renderer._depths[b] = tdb[1];
+      renderer._buffers[b] = tdb[2];
+    }
+    
+    renderer._buffer = false;
+    renderer.GetBuffer = function(){return this._buffers[this._buffer]}
+}
 var simpleQuad = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
 
 function Renderer(gl){
     this.gl = gl;
     this.programName = null
-    this._textures = {true: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gl.canvas),
-                      false: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gl.canvas)};
-this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
-    
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffers[true]);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._textures[true], 0)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffers[false]);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._textures[false], 0);
 
-    this._buffer = false;
-    this.GetBuffer = function(){return this._buffers[this._buffer]}
+    SetUpFrameBuffers(this, gl, gl.drawingBufferWidth, gl.drawingBufferHeight)
     
     this._quadPositionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quadPositionBuffer);
@@ -83,6 +118,10 @@ this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
         this._buffer = !this._buffer;
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.GetBuffer());
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        
+        this.gl.bindTexture(gl.TEXTURE_2D, null);
+        this.gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
     this._programs = {}
     this.GetOrCreateProgram = GetOrCreateProgram;
@@ -110,6 +149,10 @@ this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
         {
             renderable.RenderObject(this);
         }
+        this.gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        this.gl.bindTexture(gl.TEXTURE_2D, null);
+        this.gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 }
 
