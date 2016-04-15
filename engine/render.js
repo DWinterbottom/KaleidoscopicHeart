@@ -11,13 +11,19 @@ function GetOrCreateProgram(name, vertexSource, fragmentSource, attribNames, uni
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexSource);
     gl.compileShader(vertexShader);
-    //console.log( gl.getShaderInfoLog(bgVertexShader));
-    
+    if (game.debug)
+    {
+        console.log( name+" Vertex Shader Compilation Log: "+gl.getShaderInfoLog(vertexShader));
+    }
+
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, fragmentShaderSource);
+    gl.shaderSource(fragmentShader, fragmentSource);
     gl.compileShader(fragmentShader);
-    //console.log( gl.getShaderInfoLog(bgFragmentShader));
-    
+    if (game.debug)
+    {
+        console.log( name+" Fragment Shader Compilation Log:"+gl.getShaderInfoLog(fragmentShader));
+    }
+
     var shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
     gl.attachShader(shaderProgram, fragmentShader);
@@ -41,8 +47,8 @@ var simpleQuad = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
 function Renderer(gl){
     this.gl = gl;
     this.programName = null
-    this._textures = {true: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferWidth, 0, gl.RGBA, gl.UNSIGNED_BYTE, null),
-                      false: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferWidth, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)};
+    this._textures = {true: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gl.canvas),
+                      false: gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gl.canvas)};
 this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
     
     gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffers[true]);
@@ -54,8 +60,8 @@ this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
     this.GetBuffer = function(){return this._buffers[this._buffer]}
     
     this._quadPositionBuffer = gl.createBuffer()
-    gl.bindBuffer(context.ARRAY_BUFFER, this.quadPositionBuffer);
-    gl.bufferData(context.ARRAY_BUFFER, new Float32Array(simpleQuad), context.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._quadPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(simpleQuad), gl.STATIC_DRAW);
     
     this.EndFrame = function(){
         var drawBufferToCanvas = this._programs["_bufferToCanvas"];
@@ -108,7 +114,7 @@ this._buffers = {true: gl.createFramebuffer(), false: gl.createFramebuffer()}
 }
 
 var stProgName = "standard";
-function StandardShaderRenderObject(renderer){
+function StandardShaderRenderObjectFunction(renderer){
     var standard;
     if (renderer.programName != stProgName)
     {
@@ -132,13 +138,13 @@ function StandardShaderRenderObject(renderer){
 
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(context.ARRAY_BUFFER, new Float32Array(this.vertices), context.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aVertexPosition"]);
     gl.vertexAttribPointer(locations["aVertexPosition"], 2, gl.FLOAT, false, 0, 0); //positionLoc, numComponents, type, false, stride, offset
     
     var vertexDataBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer);
-    gl.bufferData(context.ARRAY_BUFFER, new Float32Array(this.vertexData), context.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aTextureCoordinates"]);
     gl.vertexAttribPointer(locations["aTextureCoordinates"], 2, gl.FLOAT, false, 4, 0); //positionLoc, numComponents, type, false, stride, offset
     gl.enableVertexAttribArray(locations["aHue"]);
@@ -173,13 +179,13 @@ function KaleidoscopeFanRenderFunction(renderer){
     
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aVertexPosition"]);
     gl.vertexAttribPointer(locations["aVertexPosition"], 2, gl.FLOAT, false, 0, 0); //positionLoc, numComponents, type, false, stride, offset
     
     var texBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-    gl.bufferData(context.ARRAY_BUFFER, new Float32Array(vertexTexturePositions), context.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexTexturePositions), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aTextureCoordinates"]);
     gl.vertexAttribPointer(locations["aTextureCoordinates"], 2, gl.FLOAT, false, 0, 0); //positionLoc, numComponents, type, false, stride, offset
 

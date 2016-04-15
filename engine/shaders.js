@@ -147,17 +147,17 @@ shaders.attributes = ["uLayerHeight", "uMVMatrix", "uTexture"]
 
 shaders.bufferToCanvasVertex = `
 attribute vec2 aVertexPosition;
-varying vTextureCoordinates;
+varying vec2 vTextureCoordinates;
 void main(void)
 {
     gl_Position = vec4(aVertexPosition, 0.0, 0.0);
-    vTextureCoordinates = vec2((aVertexPosition.x + 1)*0.5, (aVertexPosition.y + 1)*0.5);
+    vTextureCoordinates = vec2((aVertexPosition.x + 1.0)*0.5, (aVertexPosition.y + 1.0)*0.5);
 }
 `
 
 shaders.bufferToCanvasFragment = `
-
-varying vTextureCoordinates;
+precision mediump float;
+varying vec2 vTextureCoordinates;
 uniform sampler2D uTexture;
 void main(void)
 {

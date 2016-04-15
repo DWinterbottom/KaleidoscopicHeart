@@ -45,7 +45,7 @@ function Mat4Identity(){
                     0,0,1,0,
                     0,0,0,1] }
 
-function Multiply4x4(first, second){
+function Mat4Multiply(first, second){
     var ret = Mat4Identity()
     for (var i = 0; i < 4; i++)
     {
