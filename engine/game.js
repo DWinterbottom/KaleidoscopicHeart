@@ -7,11 +7,11 @@ game.debug = true;
 function Startup(gameName, canvasName)
 {
     var canvas = document.getElementById(canvasName);
-    var context = canvas.getContext("experimental-webgl2") ||
-                canvas.getContext("webgl") ||
-                canvas.getContext("experimental-webgl") ||
-                canvas.getContext("moz-webgl") ||
-                canvas.getContext("webkit-3d") ;
+    var context = canvas.getContext("experimental-webgl2",{preserveDrawingBuffer: true}) ||
+                canvas.getContext("webgl",{preserveDrawingBuffer: true}) ||
+                canvas.getContext("experimental-webgl",{preserveDrawingBuffer: true}) ||
+                canvas.getContext("moz-webgl", {preserveDrawingBuffer: true}) ||
+                canvas.getContext("webkit-3d", {preserveDrawingBuffer: true}) ;
     if (!context)
     {
         console.log("Could not get OpenGL context");
@@ -36,7 +36,7 @@ game.StartGameLoop = function(){
 function GameLoop()
 {
     var thisTime = window.performance.now();
-    var deltaT = Math.min(thisTime - this.previousTime, maxFrameTime);
+    var deltaT = Math.min(thisTime - game.previousTime, maxFrameTime);
     game.previousTime = thisTime;
 
     game.gameSpecific.Advance(deltaT);
@@ -46,7 +46,7 @@ function GameLoop()
     game.collisionManager.HandleCollisions(collisionObjects);
 
     var renderObjects = game.sceneGraph.GetRenderObjects();
-    game.renderer.RenderObjects(renderObjects, null);
+    game.renderer.RenderObjects(null, renderObjects);
     
     game.renderer.EndFrame();
     

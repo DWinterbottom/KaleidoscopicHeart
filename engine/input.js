@@ -2,11 +2,12 @@ function KeyInput() {
     this.pressedThisFrame = {};
     this.OnKeyPress = function(event)
     {
-        var key = event.keyCode;
-        this.pressedThisFrame[key] = true;
+        var key = event.charCode;
+        game.keyInput.pressedThisFrame[key] = true;
     }
     this.KeyPressed = function(key){
-        return this.pressedThisFrame[key] == true;
+        var pressed = this.pressedThisFrame[key] === true;
+        return pressed;
     }
     this.NewFrame = function()
     {

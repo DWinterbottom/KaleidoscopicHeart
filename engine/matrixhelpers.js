@@ -5,7 +5,7 @@ function Rot2dMat(angle){
             0,0,0,1]
 };
 function SquaringMat(width, height, expand = false){
-    if (expand){
+    if (!expand){
         if (width > height){
         var ratio = height/width;
         return [ ratio, 0, 0, 0,
@@ -23,15 +23,15 @@ function SquaringMat(width, height, expand = false){
     } else {
         if (width > height){
         var ratio = width/height;
-        return [ ratio, 0, 0, 0,
-                 0, 1, 0, 0,
+        return [ 1, 0, 0, 0,
+                 0, ratio, 0, 0,
                  0, 0, 1, 0,
                  0, 0, 0, 1]
         }
         else {
             var ratio = height/width;
-            return [ 1, 0, 0, 0,
-                     0, ratio, 0, 0,
+            return [ ratio, 0, 0, 0,
+                     0, 1, 0, 0,
                      0, 0, 1, 0,
                      0, 0, 0, 1]
         }
@@ -40,11 +40,18 @@ function SquaringMat(width, height, expand = false){
     }
 }
 function Mat4Identity(){
-                    return [1,0,0,0,
-                    0,1,0,0,
-                    0,0,1,0,
-                    0,0,0,1] }
+    return [1,0,0,0,
+        0,1,0,0,
+        0,0,1,0,
+        0,0,0,1] }
 
+function Mat4Scale(scale){
+    return [scale,0,0,0,
+            0,scale,0,0,
+            0,0,scale,0,
+            0,0,0,1]
+}
+                    
 function Mat4Multiply(first, second){
     var ret = Mat4Identity()
     for (var i = 0; i < 4; i++)
@@ -62,9 +69,9 @@ function Mat4Multiply(first, second){
     return ret
 }
 
-function Translate(original, translation){
-                    return [original[0],original[1],original[2],original[3]+translation[0],
-                    original[4],original[5],original[6],original[7]+translation[1],
-                    original[8],original[9],original[10],original[11]+translation[2],
-                    original[12],original[13],original[14],original[15]] }
+function Mat4Translate(translation){
+                    return [1, 0, 0, translation[0],
+                    0, 1, 0, translation[1],
+                    0, 0, 1, translation[2],
+                    0, 0, 0, 1] }
 

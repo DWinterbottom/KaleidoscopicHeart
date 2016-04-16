@@ -57,7 +57,7 @@ lowp vec4 GetHSL(vec4 v4RGBA)
     }
     else if (fHueDistance < -0.5)
     {
-        fHueDistance = fHueDistance + 1;
+        fHueDistance = fHueDistance + 1.0;
     }
     
     fTexHue = fTexHue + (fHueDistance * vColourise);
@@ -134,7 +134,7 @@ void main(void)
 
 shaders.vertex = `
 attribute vec2 aVertexPosition;
-attribute vec2 aTetureCoordinates;
+attribute vec2 aTextureCoordinates;
 attribute float aHue;
 attribute float aColourise;
 varying vec2 vTextureCoordinates;
@@ -146,14 +146,14 @@ uniform mat4 uMVMatrix;
 void main(void)
 {
     gl_Position = uMVMatrix * vec4(aVertexPosition, uLayerHeight, 1.0);
-    vTextureCoordinates = aTetureCoordinates;
+    vTextureCoordinates = aTextureCoordinates;
     vHue = aHue;
     vColourise = aColourise;
 }`
 
-shaders.uniforms = ["aVertexPosition", "aTextureCoordinates", "aHue", "aColourise"]
+shaders.attributes = ["aVertexPosition", "aTextureCoordinates", "aHue", "aColourise"]
 
-shaders.attributes = ["uLayerHeight", "uMVMatrix", "uTexture"]
+shaders.uniforms = ["uLayerHeight", "uMVMatrix", "uTexture"]
 
 shaders.bufferToCanvasVertex = `
 attribute vec2 aVertexPosition;
@@ -181,7 +181,7 @@ shaders.bufferToCanvasAttributes = ["aVertexPosition"]
 
 shaders.kaleidoscopeFanVertex = `
 attribute vec2 aVertexPosition;
-attribute vec3 aTextureCoordinates;
+attribute vec2 aTextureCoordinates;
 varying vTextureCoordinates;
 void main(void)
 {

@@ -30,19 +30,26 @@ function GetOrCreateProgram(name, vertexSource, fragmentSource, attribNames, uni
     gl.linkProgram(shaderProgram);
     
     var locations = {}
-    for (var attribName in attribNames)
+    for (var attrib in attribNames)
     {
+        var attribName = attribNames[attrib];
         locations[attribName] = gl.getAttribLocation(shaderProgram, attribName);
+        console.log(name+": Attribute '"+attribName+"' bound to location "+locations[attribName])
     }
-    for (var uniformName in uniformNames)
+    for (var uniform in uniformNames)
     {
+        var uniformName = uniformNames[uniform];
         locations[uniformName] = gl.getUniformLocation(shaderProgram, uniformName);
+        if (game.debug)
+        {
+            console.log(name+": Uniform '"+uniformName+"' bound to location "+locations[uniformName])
+        }
     }
     this._programs[name] = [shaderProgram, locations];
     return [shaderProgram, locations];
 }
 
-function SetUpFrameBuffer(gl, height, width)
+function SetUpFrameBuffer(gl, width, height)
 {
       var texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -69,7 +76,7 @@ function SetUpFrameBuffer(gl, height, width)
     
 }
 
-function SetUpFrameBuffers(renderer, gl, height, width)
+function SetUpFrameBuffers(renderer, gl, width, height)
 {
     renderer._textures = {};
     renderer._depths = {};
@@ -77,7 +84,8 @@ function SetUpFrameBuffers(renderer, gl, height, width)
     
     for (var b in [true, false])
     { 
-      var tdb = SetUpFrameBuffer(gl, height, width);
+      b = [true,false][b]
+      var tdb = SetUpFrameBuffer(gl, width, height);
       renderer._textures[b] = tdb[0];
       renderer._depths[b] = tdb[1];
       renderer._buffers[b] = tdb[2];
@@ -86,12 +94,12 @@ function SetUpFrameBuffers(renderer, gl, height, width)
     renderer._buffer = false;
     renderer.GetBuffer = function(){return this._buffers[this._buffer]}
 }
-var simpleQuad = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
+var simpleQuad = [-1.0, -1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0]
 
 function Renderer(gl){
     this.gl = gl;
     this.programName = null
-
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     SetUpFrameBuffers(this, gl, gl.drawingBufferWidth, gl.drawingBufferHeight)
     
     this._quadPositionBuffer = gl.createBuffer()
@@ -125,7 +133,7 @@ function Renderer(gl){
     }
     this._programs = {}
     this.GetOrCreateProgram = GetOrCreateProgram;
-    this.GetOrCreateProgram("_bufferToCanvas", shaders.bufferToCanvasVertex, shaders.bufferToCanvasFragment, shaders.bufferToCanvasUniforms, shaders.bufferToCanvasAttributes);
+    this.GetOrCreateProgram("_bufferToCanvas", shaders.bufferToCanvasVertex, shaders.bufferToCanvasFragment, shaders.bufferToCanvasAttributes, shaders.bufferToCanvasUniforms);
     this.GetProgram = function(name)
         {
             return this._programs[name];
@@ -144,11 +152,16 @@ function Renderer(gl){
         return texture
     }
     this.RenderObjects = function(targetBuffer, renderables){
+        if (targetBuffer == null)
+        {
+            targetBuffer = this.GetBuffer();
+        }
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, targetBuffer)
         for (renderable in renderables)
         {
-            renderable.RenderObject(this);
+            renderables[renderable].RenderFunction(this);
         }
+        
         this.gl.bindBuffer(gl.ARRAY_BUFFER, null);
         this.gl.bindTexture(gl.TEXTURE_2D, null);
         this.gl.bindRenderbuffer(gl.RENDERBUFFER, null);
@@ -161,7 +174,7 @@ function StandardShaderRenderObjectFunction(renderer){
     var standard;
     if (renderer.programName != stProgName)
     {
-        standard = renderer.GetOrCreateProgram(stProgName, shaders.vertex, shaders.fragment, shaders.uniforms, shaders.attributes);
+        standard = renderer.GetOrCreateProgram(stProgName, shaders.vertex, shaders.fragment, shaders.attributes, shaders.uniforms);
     }
     else
     {
@@ -177,25 +190,40 @@ function StandardShaderRenderObjectFunction(renderer){
 
     
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.renderData.texture);
-
+    if (!this.renderData.texture)
+    {
+        this.renderData.texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.renderData.texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.renderData.image);
+        gl.generateMipmap(gl.TEXTURE_2D);
+    }
+    else
+    {
+        gl.bindTexture(gl.TEXTURE_2D, this.renderData.texture);
+    }
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aVertexPosition"]);
     gl.vertexAttribPointer(locations["aVertexPosition"], 2, gl.FLOAT, false, 0, 0); //positionLoc, numComponents, type, false, stride, offset
     
+    //Vertex Data
     var vertexDataBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexDataBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(locations["aTextureCoordinates"]);
-    gl.vertexAttribPointer(locations["aTextureCoordinates"], 2, gl.FLOAT, false, 4, 0); //positionLoc, numComponents, type, false, stride, offset
+    gl.vertexAttribPointer(locations["aTextureCoordinates"], 2, gl.FLOAT, false, 4*4, 0*4); //positionLoc, numComponents, type, false, stride, offset
     gl.enableVertexAttribArray(locations["aHue"]);
-    gl.vertexAttribPointer(locations["aHue"], 1, gl.FLOAT, false, 4, 2);
+    gl.vertexAttribPointer(locations["aHue"], 1, gl.FLOAT, false, 4*4, 2*4);//*4 'cause it's float32s.
     gl.enableVertexAttribArray(locations["aColourise"]);
-    gl.vertexAttribPointer(locations["aColourise"], 1, gl.FLOAT, false, 4, 3);
+    gl.vertexAttribPointer(locations["aColourise"], 1, gl.FLOAT, false, 4, 3*4);
     
-    gl.drawArrays(this.gl.TRIANGLE_FAN, 0, this.vertices.length / 2);    //Planning to stick to convex polygons here, to make a lot of things easier.
+    //Uniforms
+    gl.uniformMatrix4fv(locations["uMVMatrix"], false, this.transform)
+    var layerHeight = this.layerHeight | this.renderData.layerHeight | 0.0
+    gl.uniform1f(locations["uLayerHeight"], false, layerHeight)
+    
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vertices.length / 2);    //Planning to stick to convex polygons here, to make a lot of things easier.
 }
 
 var kfProgName = "fan";
@@ -232,5 +260,5 @@ function KaleidoscopeFanRenderFunction(renderer){
     gl.enableVertexAttribArray(locations["aTextureCoordinates"]);
     gl.vertexAttribPointer(locations["aTextureCoordinates"], 2, gl.FLOAT, false, 0, 0); //positionLoc, numComponents, type, false, stride, offset
 
-    gl.drawArrays(this.gl.TRIANGLE_FAN, 0, vertices.length / 2);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, vertices.length / 2);
 }

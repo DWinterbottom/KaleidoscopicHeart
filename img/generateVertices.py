@@ -17,12 +17,15 @@ for fileName in textFiles:
             #First line is the size.
             sizeLine = textFile.readline()
             size = pointFromLine(sizeLine)
+            errors += ["Texture Size = "+`size`]
             #BlankLine.
             textFile.readline()
             #List of verices.
             for line in textFile.readlines():
                 point = pointFromLine(line)
-                vertex = (point[0]/size[0], -point[1]/size[1])#Invert y axis.
+                errors += ["Point: "+`point`]
+                vertex = (point[0]/(size[0]-1), 1 - (point[1]/(size[1]-1)))#Invert y axis.
+                errors += ["Raw Vertex: "+`vertex`]
                 vertices.append(vertex)
         verticesForFiles[name] = vertices
     except BaseException as error:
@@ -39,7 +42,7 @@ for name in verticesForFiles:
     textureData[name] = {
         "isLoaded":False,
         "imagePath":"./img/{}.png".format(name),
-        "vertices":chain([(2 * vertex[0] -1, 2 * vertex[1] - 1) for vertex in verticesForFiles[name]]),
+        "vertices":chain([((2 * vertex[0]) -1, (2 * vertex[1]) - 1) for vertex in verticesForFiles[name]]),
         "textureCoordinates":chain(verticesForFiles[name])
     }
 

@@ -2,7 +2,7 @@ function AdvanceObject(deltaT)
 {
     for (var child in this.children)
     {
-        child.Advance(deltaT);
+        this.children[child].Advance(deltaT);
     }
     this.OnAdvance(deltaT);
 }
@@ -11,9 +11,9 @@ function NewFrameObject()
 {
     for (var child in this.children)
     {
-        child.NewFrame();
+        this.children[child].NewFrame();
     }
-    this.OnNewFrame;
+    this.OnNewFrame();
 }
 
 function MakeSceneGraphObjectPrototype(renderObjectPrototype, collisionObjectPrototype, behaviour)
@@ -22,18 +22,18 @@ function MakeSceneGraphObjectPrototype(renderObjectPrototype, collisionObjectPro
         Advance:AdvanceObject,
         NewFrame:NewFrameObject,
         AddReference:function(){
-            this.reference += 1;
+            this.references += 1;
         },
         AddChild:function(child){
             this.children.push(child);
             child.AddReference();
         },
         RemoveReference:function(){
-            this.reference -= 1;
-            if (this.reference < 1)
+            this.references -= 1;
+            if (this.references < 1)
             {
                 for (var child in this.children){
-                    child.RemoveReference();
+                    this.children[child].RemoveReference();
                 }
                 this.OnDestroy();
             }
@@ -42,6 +42,7 @@ function MakeSceneGraphObjectPrototype(renderObjectPrototype, collisionObjectPro
             var found = false;
             for (var child in this.children)
             {
+                child = this.children[child];
                 if (child.objectID == objectID)
                 {
                     child.RemoveReference();
@@ -89,11 +90,11 @@ function StandardGetRenderObjects()
     renderObjects = [];
     for (var child in this.children)
     {
-        renderObjects.push.apply(renderObjects, child.GetRenderObjects());
+        renderObjects.push.apply(renderObjects, this.children[child].GetRenderObjects());
     }
     for (var renderObject in renderObjects)
     {
-        AddTransformationToObject(this.transform, renderObject)
+        AddTransformationToObject(this.transform, renderObjects[renderObject])
     }
     if (this.RenderFunction)
     {
@@ -106,8 +107,9 @@ function StandardGetRenderObjects()
             renderData:this.renderData,
             original:this
         }
-        renderObjects.push()
+        renderObjects.push(thisRenderObject);
     }
+    return renderObjects;
 }
 
 function RenderObjectPrototype(GetRenderObjects, vertices, vertexData, RenderFunction, renderData) {
@@ -126,11 +128,11 @@ function StandardGetCollisionObjects()
     collisionObjects = [];
     for (var child in this.children)
     {
-        collisionObjects.push.apply(collisionObjects, child.GetCollisionObjects());
+        collisionObjects.push.apply(collisionObjects, this.children[child].GetCollisionObjects());
     }
     for (var collisionObject in collisionObjects)
     {
-        AddTransformationToObject(this.transform, collisionObject)
+        AddTransformationToObject(this.transform, collisionObjects[collisionObject])
     }
     if (this.collisionData !== null)
     {
@@ -141,8 +143,9 @@ function StandardGetCollisionObjects()
             collisionData:this.collisionData,
             original:this
         }
-        renderObjects.push()
+        collisionObjects.push(thisCollisionObject);
     }
+    return collisionObjects;
 };
 
 function CollisionObjectPrototype(GetCollisionObjects, collisionData) {
@@ -153,21 +156,22 @@ function CollisionObjectPrototype(GetCollisionObjects, collisionData) {
     return proto
 };
 
-function Behaviour(Init, OnAdvance, OnCollision, OnNewFrame) {
+function Behaviour(Init, OnAdvance, OnCollision, OnNewFrame, OnDestroy) {
     var proto = {
         Init:Init,
         OnAdvance:OnAdvance,
         OnCollision:OnCollision,
-        OnNewFrame:OnNewFrame
+        OnNewFrame:OnNewFrame,
+        OnDestroy:OnDestroy,
     };
     return proto;
 };
 
 function EmptyFunction(){}
-var NoBehaviour = Behaviour(EmptyFunction, EmptyFunction, EmptyFunction, EmptyFunction);
+var NoBehaviour = Behaviour(EmptyFunction, EmptyFunction, EmptyFunction, EmptyFunction, EmptyFunction);
 var NoCollisionObject = CollisionObjectPrototype(StandardGetCollisionObjects, null);
 var NoRenderObject = RenderObjectPrototype(StandardGetRenderObjects, null, null, null, null);
-function InitOnlyBehaviour(Init) {return Behaviour(Init, EmptyFunction, EmptyFunction, EmptyFunction)};
+function InitOnlyBehaviour(Init) {return Behaviour(Init, EmptyFunction, EmptyFunction, EmptyFunction, EmptyFunction)};
 
 function MakeSceneGraphRoot(){
     return MakeSceneGraphObject(
@@ -175,4 +179,20 @@ function MakeSceneGraphRoot(){
             InitOnlyBehaviour(function(){this.transform = SquaringMat(game.renderer.gl.drawingBufferWidth, game.renderer.gl.drawingBufferHeight, true)})
         )
     );
+}
+
+function MakeStandardShaderRenderPrototype(textureInfo, hue, colourise){
+    var vertices = textureInfo.vertices;
+    var vertexData = []
+    var offset = 0;
+    while (offset < textureInfo.textureCoordinates.length)
+    {
+        vertexData.push(textureInfo.textureCoordinates[offset]);
+        vertexData.push(textureInfo.textureCoordinates[offset+1]);
+        vertexData.push(hue);
+        vertexData.push(colourise);
+        offset += 2;
+    }
+    renderData = {image:textureInfo.image};
+    return RenderObjectPrototype(StandardGetRenderObjects, vertices, vertexData, StandardShaderRenderObjectFunction, renderData)
 }
